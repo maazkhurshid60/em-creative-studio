@@ -1,4 +1,43 @@
 /* ==================================================================
+   TAILWIND
+
+   Imported piece by piece rather than as `@import "tailwindcss"`, which
+   would also pull in Preflight. Preflight is a global reset - it strips
+   heading sizes, list styles, button and form appearance - and this file
+   is 1,200 lines of hand-written CSS that assumes browser defaults. Turning
+   it on mid-migration would silently restyle every section that has not
+   been ported yet. Theme + utilities give us Tailwind classes to build new
+   components with, while the existing design keeps rendering exactly as it
+   does today. Once every section is ported, add Preflight in one deliberate
+   step and re-check the pages.
+   ================================================================== */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* The brand palette below is re-declared here as Tailwind theme variables so
+   new components can say `bg-paper` / `text-ink` / `font-display` instead of
+   repeating hex codes. Single source of truth: change a value in :root and
+   mirror it here. */
+@theme {
+  --color-paper:        #F4F3EF;
+  --color-linen:        #EBE7DF;
+  --color-champagne:    #D9C4B1;
+  --color-champagne-lo: #E7D8C9;
+  --color-champagne-hi: #C0A489;
+  --color-cocoa:        #4C3515;
+  --color-cta:          #3D3029;
+  --color-espresso:     #1E1509;
+  --color-ink:          #241A0C;
+
+  --font-display: "Plus Jakarta Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sans:    "Manrope", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --ease-out-soft: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-soft: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* ==================================================================
    EM CREATIVE STUDIO — design tokens
    Palette sampled directly from the supplied logo artwork.
    60 paper / 30 espresso / 10 champagne.
@@ -455,24 +494,6 @@ body.hero-revealed .hero__lede, body.hero-revealed .hero__acts{
 .bub--a{ background:var(--espresso); color:var(--champagne); }
 .bub--b{ background:var(--cocoa);    color:var(--champagne-lo); }
 .bub--c{ background:var(--paper);    color:var(--espresso); box-shadow:0 6px 18px -8px rgba(30,21,9,.4); }
-
-/* cursor image trail */
-/* click-to-reveal image that trails the cursor */
-.trail-layer{ position:absolute; inset:0; z-index:7; pointer-events:none; overflow:hidden; }
-.crown-pop{
-  position:absolute; left:0; top:0;
-  aspect-ratio:900/625;
-  background:var(--crown-img) center / contain no-repeat;
-  will-change:transform, opacity;
-}
-/* the balloon crown while inflating */
-.crown-balloon{
-  position:absolute; left:0; top:0;
-  aspect-ratio:900/625;
-  background:var(--crown-img) center / contain no-repeat;
-  will-change:transform, opacity;
-}
-@media (prefers-reduced-motion:reduce){ .trail-layer{ display:none !important; } }
 
 /* ---- foot -------------------------------------------------------- */
 .hero__lede{

@@ -41,7 +41,7 @@
       var INK_L = 192 - PAD, INK_R = 1540 + PAD, INK_T = 336 - PAD, INK_B = 813 + PAD;
       var inkW = INK_R - INK_L, inkH = INK_B - INK_T;
 
-      var SIZE_RATIO = 1.35;   /* bigger than the surrounding text so the crown's own zigzag detail stays legible at this small final size */
+      var SIZE_RATIO = 1.60;   /* bigger than the surrounding text so the crown's own zigzag detail stays legible at this small final size */
       var scale = (SIZE_RATIO * r.height) / inkH;
       var boxW = inkW * scale;
       var boxH = inkH * scale;
