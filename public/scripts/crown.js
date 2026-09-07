@@ -41,7 +41,7 @@
       var INK_L = 192 - PAD, INK_R = 1540 + PAD, INK_T = 336 - PAD, INK_B = 813 + PAD;
       var inkW = INK_R - INK_L, inkH = INK_B - INK_T;
 
-      var SIZE_RATIO = 1.60;   /* bigger than the surrounding text so the crown's own zigzag detail stays legible at this small final size */
+      var SIZE_RATIO = 1.80;   /* bigger than the surrounding text so the crown's own zigzag detail stays legible at this small final size */
       var scale = (SIZE_RATIO * r.height) / inkH;
       var boxW = inkW * scale;
       var boxH = inkH * scale;
@@ -64,6 +64,9 @@
       el.style.transform = 'scale(1)';
       if (elIcon) elIcon.style.transform = 'scale(1)';
       document.body.classList.add('hero-revealed');
+      /* the nav has been sitting closed as a bare logo through the intro —
+         let it open now that the page itself has arrived */
+      document.body.classList.remove('nav-boot');
     }
 
     var placed = placeBoxAtWord(el, inner);
@@ -81,6 +84,15 @@
       [el, elIcon].forEach(function(node){ if (node) node.style.transition = ''; });
     }
 
+    /* The comp runs 230 frames, but the mark stops changing at ~190: measured
+       frame-by-frame, nothing at all moves from 190 to the end. Waiting for
+       'complete' meant ~1.4s of dead animation before the page revealed, on
+       top of a draw that already crawls through its middle. So it plays a bit
+       faster and reveals the moment the ink is actually finished. Both copies
+       take the same speed or the halo would drift out of register. */
+    var SPEED = 2;
+    var REVEAL_FRAME = 190;
+
     if (inner && window.lottie) {
       var anim = lottie.loadAnimation({
         container: inner,
@@ -89,21 +101,35 @@
         autoplay: true,
         animationData: CROWN_ANIM_DATA
       });
+      anim.setSpeed(SPEED);
 
       if (innerIcon && placedIcon) {
-        lottie.loadAnimation({
+        var animIcon = lottie.loadAnimation({
           container: innerIcon,
           renderer: 'svg',
           loop: false,
           autoplay: true,
           animationData: CROWN_ICON_ONLY_DATA
         });
+        animIcon.setSpeed(SPEED);
       }
 
       if (RM || !placed) {
         dock();
       } else {
-        anim.addEventListener('complete', dock);
+        var docked = false;
+        var onFrame = function(){
+          if (docked) return;
+          /* drives the progress ring drawn around the collapsed nav badge */
+          var p = Math.min(1, Math.max(0, anim.currentFrame / REVEAL_FRAME));
+          document.documentElement.style.setProperty('--intro-p', p.toFixed(4));
+          if (anim.currentFrame < REVEAL_FRAME) return;
+          docked = true;
+          anim.removeEventListener('enterFrame', onFrame);
+          dock();
+        };
+        anim.addEventListener('enterFrame', onFrame);
+        anim.addEventListener('complete', function(){ if (!docked) { docked = true; dock(); } });
       }
     } else {
       document.body.classList.add('hero-revealed');

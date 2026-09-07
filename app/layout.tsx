@@ -19,7 +19,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           rel="stylesheet"
         />
       </head>
-      <body>
+      <body className="nav-boot">
         {children}
         <Script src="/scripts/lottie.min.js" strategy="beforeInteractive" />
       </body>

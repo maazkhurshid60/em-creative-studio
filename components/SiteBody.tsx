@@ -18,6 +18,8 @@ export default function SiteBody() {
           window.lottie is guaranteed to exist by the time this runs. */}
       <Script src="/scripts/main.js" strategy="afterInteractive" />
       <Script src="/scripts/crown.js" strategy="afterInteractive" />
+      <Script src="/scripts/fluid.js" strategy="afterInteractive" />
+      <Script src="/scripts/grid.js" strategy="afterInteractive" />
     </>
   );
 }

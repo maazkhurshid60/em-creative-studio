@@ -350,12 +350,39 @@ const cio = new IntersectionObserver((es,o) => {
 document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
 
 /* ==================================================================
+   6b. NAV COLLAPSE — shrinks to just the logo once scrolled; click the
+   logo to reopen it in place. Resets the next time you scroll back up.
+   ================================================================== */
+(() => {
+  const navBrand = document.querySelector('.nav .brand');
+  if (!navBrand) return;
+  navBrand.addEventListener('click', (e) => {
+    if (!document.body.classList.contains('nav-tucked')) return;
+    e.preventDefault();
+    document.body.classList.toggle('nav-open');
+  });
+  document.querySelectorAll('.nav-links a, .nav .btn--dark').forEach(a => {
+    a.addEventListener('click', () => document.body.classList.remove('nav-open'));
+  });
+  /* The page ships with .nav-boot on <body> so the nav paints closed, then
+     opens with the same motion it uses on scroll. crown.js drops the class
+     when the mark docks; this is the backstop if that never fires. */
+  setTimeout(() => document.body.classList.remove('nav-boot'), 9000);
+})();
+
+/* ==================================================================
    7. SCROLL LOOP — nav state, manifesto fill, step stack scaling
    ================================================================== */
 const steps = [...document.querySelectorAll('.step')];
 let queued = false;
 function onScroll(){
-  document.body.classList.toggle('scrolled', scrollY > 24);
+  const isScrolled = scrollY > 24;
+  document.body.classList.toggle('scrolled', isScrolled);
+  /* the nav tucks away later than the shadow appears, so a nudge of scroll
+     doesn't shut it in your face */
+  const tucked = scrollY > 160;
+  document.body.classList.toggle('nav-tucked', tucked);
+  if (!tucked) document.body.classList.remove('nav-open');
 
   /* ---- crown scroll-grow: crowns bloom bigger as the hero scrolls away ---- */
   if (hero && !RM) {
