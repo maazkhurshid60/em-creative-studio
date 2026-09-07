@@ -260,7 +260,7 @@ export const SITE_BODY_HTML = `
         <div id="qBar" style="height:100%;width:33.3%;background:var(--espresso);border-radius:2px;transition:width 400ms var(--ease-out);"></div>
       </div>
       <h3 id="qTitle" style="font-family:var(--display);font-weight:800;font-size:clamp(1.1rem,1.8vw,1.45rem);margin:clamp(18px,2.5vh,28px) 0 clamp(14px,2vh,22px);letter-spacing:-.02em;">What best describes your current setup?</h3>
-      <div id="qOpts" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+      <div id="qOpts" class="quiz__opts"></div>
     </div>
   </div>
 </section>

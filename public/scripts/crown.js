@@ -60,9 +60,24 @@
       return true;
     }
 
+    /* The white knockout behind the docked mark is an SVG filter referenced
+       from CSS as url(#crownCutout). In a stylesheet that reference is
+       resolved against the STYLESHEET's URL, not the document's — Chrome is
+       lenient about it, Safari is not, and a bundler that rebases url() can
+       break it anywhere. Dev serves the CSS differently from production,
+       which is exactly the shape of "works locally, gone once deployed".
+       An inline style with an absolute URL resolves against the document in
+       every engine, so set it here rather than trusting the cascade. */
+    function armCutout(){
+      if (!innerIcon) return;
+      var base = location.href.split('#')[0];
+      innerIcon.style.filter = 'url("' + base + '#crownCutout")';
+    }
+
     function dock(){
       el.style.transform = 'scale(1)';
       if (elIcon) elIcon.style.transform = 'scale(1)';
+      armCutout();
       document.body.classList.add('hero-revealed');
       /* the nav has been sitting closed as a bare logo through the intro —
          let it open now that the page itself has arrived */
@@ -71,6 +86,21 @@
 
     var placed = placeBoxAtWord(el, inner);
     var placedIcon = elIcon && innerIcon && placeBoxAtWord(elIcon, innerIcon);
+
+    /* The box is measured against the headline's hidden word slot, so it is
+       only correct for the line wrapping that existed when it was measured.
+       Rotating a phone, or any resize that rewraps the headline, left the
+       mark stranded over the wrong text. Re-measure, debounced. */
+    var reflow;
+    function replace(){
+      placeBoxAtWord(el, inner);
+      if (elIcon && innerIcon) placeBoxAtWord(elIcon, innerIcon);
+    }
+    addEventListener('resize', function(){
+      clearTimeout(reflow);
+      reflow = setTimeout(replace, 150);
+    }, { passive: true });
+    addEventListener('orientationchange', function(){ setTimeout(replace, 300); });
     if (placed && !RM) {
       /* apply the big intro scale with transitions off so it appears
          instantly at full size instead of visibly growing into it -

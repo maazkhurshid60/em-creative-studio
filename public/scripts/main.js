@@ -356,13 +356,36 @@ document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
 (() => {
   const navBrand = document.querySelector('.nav .brand');
   if (!navBrand) return;
+  /* On a phone the links live in a panel the brand opens, so the brand is a
+     menu button at any scroll position. On desktop it is only a control once
+     the pill has collapsed to the badge. */
+  const isMobileNav = () => window.matchMedia('(max-width:860px)').matches;
   navBrand.addEventListener('click', (e) => {
-    if (!document.body.classList.contains('nav-tucked')) return;
+    if (!isMobileNav() && !document.body.classList.contains('nav-tucked')) return;
     e.preventDefault();
     document.body.classList.toggle('nav-open');
+    navBrand.setAttribute('aria-expanded',
+      document.body.classList.contains('nav-open') ? 'true' : 'false');
   });
+  navBrand.setAttribute('aria-expanded', 'false');
   document.querySelectorAll('.nav-links a, .nav .btn--dark').forEach(a => {
-    a.addEventListener('click', () => document.body.classList.remove('nav-open'));
+    a.addEventListener('click', () => {
+      document.body.classList.remove('nav-open');
+      navBrand.setAttribute('aria-expanded', 'false');
+    });
+  });
+  /* tapping away closes it — on a phone there is no hover to hint otherwise */
+  document.addEventListener('click', (e) => {
+    if (!document.body.classList.contains('nav-open')) return;
+    if (e.target.closest('.nav-pill')) return;
+    document.body.classList.remove('nav-open');
+    navBrand.setAttribute('aria-expanded', 'false');
+  });
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('nav-open')) {
+      document.body.classList.remove('nav-open');
+      navBrand.setAttribute('aria-expanded', 'false');
+    }
   });
   /* The page ships with .nav-boot on <body> so the nav paints closed, then
      opens with the same motion it uses on scroll. crown.js drops the class

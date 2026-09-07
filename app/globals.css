@@ -221,6 +221,17 @@ body.nav-boot .nav-pill::after{
 }
 /* a slow breath under the ring so the badge never sits perfectly still */
 body.nav-boot .brand{ animation:navBreathe 3200ms ease-in-out 1100ms infinite; }
+
+/* Once the pill has collapsed to the badge it is a small mark floating over
+   whatever is scrolling past, so it sits back until it is wanted. */
+.brand{ transition:opacity 420ms var(--ease-out); }
+body.nav-tucked:not(.nav-open) .brand{ opacity:.45; }
+body.nav-tucked:not(.nav-open) .brand:hover,
+body.nav-tucked:not(.nav-open) .brand:focus-visible{ opacity:1; }
+@media (hover:none){
+  /* no hover to bring it back on touch, so do not fade it as far */
+  body.nav-tucked:not(.nav-open) .brand{ opacity:.6; }
+}
 @keyframes navBreathe{
   0%,100%{ transform:scale(1); }
   50%    { transform:scale(1.05); }
@@ -314,8 +325,41 @@ body.nav-tucked:not(.nav-open) .nav .btn{
   padding-left:0; padding-right:0; border-width:0;
 }
 
+/* Below 860 the links used to be display:none with nothing in their place,
+   which left the site with no navigation at all on a phone — only the CTA.
+   They now drop out of the pill and into a panel the brand button opens,
+   reusing the .nav-open state the scroll-collapse already toggles. */
 @media (max-width:860px){
-  .nav-links{ display:none; }
+  .nav-links{
+    position:absolute; left:0; right:0; top:calc(100% + 10px);
+    flex-direction:column; align-items:stretch; gap:2px;
+    padding:10px;
+    border-radius:var(--r-lg);
+    /* Near-opaque rather than the pill's glass tint. A dropdown sits over
+       whatever the page happens to have there — at 55% the headline read
+       straight through it, and backdrop-filter cannot be relied on to
+       rescue that (it is unsupported or disabled often enough to matter). */
+    background:#F1E8DE;
+    backdrop-filter:blur(18px) saturate(155%);
+    border:1px solid rgba(255,255,255,.6);
+    box-shadow:0 18px 40px -22px rgba(36,26,12,.5);
+    /* collapsed by default; no display:none, so it can animate */
+    opacity:0; visibility:hidden; transform:translateY(-8px);
+    transition:opacity 260ms var(--ease-out), transform 260ms var(--ease-out),
+               visibility 0s linear 260ms;
+  }
+  body.nav-open .nav-links{
+    opacity:1; visibility:visible; transform:none;
+    transition-delay:0s, 0s, 0s;
+  }
+  .nav-links a{
+    display:block; padding:13px 16px; border-radius:calc(var(--r-lg) - 6px);
+    font-size:1rem;
+  }
+  .nav-links a:hover, .nav-links a:focus-visible{ background:rgba(255,255,255,.45); }
+  /* the pill has to stop clipping the panel, and the brand becomes a control */
+  .nav-pill{ position:relative; overflow:visible; }
+  .brand{ cursor:pointer; }
 }
 @media (prefers-reduced-motion:reduce){
   .nav-pill, .nav-collapse, .nav .btn, .brand{ transition:none !important; }
@@ -528,6 +572,10 @@ body.hero-revealed .hero__hl .w > i{
   transition:transform 950ms cubic-bezier(.22,.61,.36,1);
 }
 #heroCrownLottieInner, #heroCrownLottieIconInner{ position:absolute; }
+/* crown.js also sets this inline with an absolute URL — see armCutout().
+   This rule stays as the no-JS fallback; the inline one wins where it
+   matters, because a bare url(#id) in an external stylesheet is resolved
+   against the stylesheet rather than the document in some engines. */
 body.hero-revealed #heroCrownLottieIconInner{ filter:url(#crownCutout); }
 #heroCrownLottieInner svg, #heroCrownLottieIconInner svg{ display:block !important; width:100% !important; height:100% !important; }
 
@@ -536,6 +584,14 @@ body.hero-revealed #heroCrownLottieIconInner{ filter:url(#crownCutout); }
 .hero__inner{ visibility:hidden; }
 .hero__lede, .hero__acts{ visibility:hidden; }
 #crownWordSlot{ visibility:hidden; }
+/* The Lottie wordmark is drawn over this slot at 1.8x the line height, so
+   inline it overhangs the lines above and below. Wide screens have room;
+   narrow ones do not, and it landed on top of the lede. Giving the slot its
+   own line keeps the overhang in the leading instead of in the copy. */
+@media (max-width:720px){
+  #crownWordSlot{ display:block; }
+  .hero__lede{ margin-top:clamp(18px,4vh,32px); }
+}
 body.hero-revealed .hero__inner,
 body.hero-revealed .hero__lede,
 body.hero-revealed .hero__acts{ visibility:visible; }
@@ -987,7 +1043,11 @@ body.hero-revealed .hero__acts > *:nth-child(2){ animation:heroFade 560ms ease 8
 .pack__list li::before{ content:"—"; opacity:.5; }
 @media (max-width:820px){
   .packs{ flex-direction:column; min-height:0; }
-  .pack[aria-expanded="true"]{ flex-grow:1; }
+  /* .pack is flex:1 1 0 for the desktop row. Stacked, a zero basis with no
+     container height to share left every row at zero height, so the titles
+     were clipped by the panel's own overflow:hidden. Size to content. */
+  .pack{ flex:0 0 auto; }
+  .pack[aria-expanded="true"]{ flex-grow:0; }
   .pack__reveal{ display:none; }
   .pack[aria-expanded="true"] .pack__reveal{ display:block; }
 }
@@ -1469,4 +1529,43 @@ body.hero-revealed .hero__acts > *:nth-child(2){ animation:heroFade 560ms ease 8
   .step{ transition:none !important; }
   .deck.armed .card{ opacity:1 !important; }
   *{ transition-duration:120ms !important; }
+}
+
+
+/* ==================================================================
+   MOBILE PASS — tap targets, cramped grids, and decoration that only
+   works when there is room for it.
+   ================================================================== */
+
+/* Was an inline grid-template-columns:1fr 1fr, which no media query could
+   reach. Two columns at phone width wrapped answers like "Growing Team
+   (6-10)" onto three lines inside a cramped box. */
+.quiz__opts{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media (max-width:560px){
+  .quiz__opts{ grid-template-columns:1fr; }
+}
+
+/* The carousel dots were an 8px hit target. The dot stays 8px; the button
+   grows to a 44px touch area around it via padding the background does not
+   paint into. */
+.quote__dot{
+  box-sizing:content-box;
+  padding:18px;
+  background-clip:content-box;
+}
+.quote__dots{ gap:0; }
+
+@media (max-width:860px){
+  /* 32px close button on a touch screen */
+  .team-modal__close{ width:44px; height:44px; top:10px; right:10px; font-size:22px; }
+
+  /* footer links were 23px tall link boxes in a list with generous leading —
+     the gaps were doing the spacing, so the tappable box stayed small */
+  .foot__body li a{ display:inline-block; padding-block:9px; }
+
+  /* The floating avatar bubbles are scattered across the full width of the
+     testimonial. At phone width they land on the quote itself; keep the
+     outermost few for atmosphere and drop the ones that collide. */
+  .quote__bubble:nth-child(n+5){ display:none; }
+  .quote__bubble{ transform:scale(.72); }
 }
