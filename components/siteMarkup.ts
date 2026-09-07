@@ -66,7 +66,7 @@ export const SITE_BODY_HTML = `
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
       <filter id="crownCutout" x="-60%" y="-60%" width="220%" height="220%">
-        <feMorphology in="SourceAlpha" operator="dilate" radius="2.5" result="dilated"/>
+        <feMorphology in="SourceAlpha" operator="dilate" radius="1.2" result="dilated"/>
         <feFlood flood-color="#FFFFFF" result="bg"/>
         <feComposite in="bg" in2="dilated" operator="in" result="halo"/>
         <feMerge>

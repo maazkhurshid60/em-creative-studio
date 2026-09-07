@@ -30,7 +30,19 @@
        shrinks straight down into place instead of sliding. Both the
        full-mark pair and the icon-only pair share this exact math so
        they land pixel-identical on top of each other. */
-    function placeBoxAtWord(outer, innerEl){
+    /* Where the crown and the C actually sit, measured off the rendered SVG
+       and expressed as fractions of the wordmark's own box so they hold at
+       any size. The artwork parks the crown over the W; it belongs on the C,
+       tipped, like the letter is wearing it. */
+    var CROWN_CX = 0.7558;   /* crown centre-x, fraction of box width  */
+    var CROWN_BY = 0.4699;   /* crown bottom-y, fraction of box height */
+    var C_CX     = 0.1739;   /* the C's centre-x, nudged for the tilt   */
+    var C_TY     = 0.5060;   /* the C's cap-height top                 */
+    var SIT_IN   = 0.008;    /* rides just clear of the cap, not resting on it */
+    var TILT     = -28;      /* degrees */
+    var WEAR     = 0.82;     /* a crown, not a canopy: 59px art over a 42px C */
+
+    function placeBoxAtWord(outer, innerEl, isIcon){
       if (!slot || !heroSection) return false;
       var r = slot.getBoundingClientRect();
       var hr = heroSection.getBoundingClientRect();
@@ -57,6 +69,20 @@
       innerEl.style.height = (CANVAS_H * scale) + 'px';
       innerEl.style.left = (-INK_L * scale) + 'px';
       innerEl.style.top = (-INK_T * scale) + 'px';
+
+      if (isIcon) {
+        /* Pivot on the crown's bottom-centre — the point that meets the
+           letter — so the tilt and the size-down both happen around where
+           it rests instead of swinging it off the C. The origin is relative
+           to the inner canvas, which is offset from the box by the crop. */
+        var ox = CROWN_CX * boxW - (-INK_L * scale);
+        var oy = CROWN_BY * boxH - (-INK_T * scale);
+        var dx = (C_CX - CROWN_CX) * boxW;
+        var dy = (C_TY - CROWN_BY + SIT_IN) * boxH;
+        innerEl.style.transformOrigin = ox + 'px ' + oy + 'px';
+        innerEl.style.transform =
+          'translate(' + dx + 'px,' + dy + 'px) rotate(' + TILT + 'deg) scale(' + WEAR + ')';
+      }
       return true;
     }
 
@@ -85,7 +111,7 @@
     }
 
     var placed = placeBoxAtWord(el, inner);
-    var placedIcon = elIcon && innerIcon && placeBoxAtWord(elIcon, innerIcon);
+    var placedIcon = elIcon && innerIcon && placeBoxAtWord(elIcon, innerIcon, true);
 
     /* The box is measured against the headline's hidden word slot, so it is
        only correct for the line wrapping that existed when it was measured.
@@ -94,7 +120,7 @@
     var reflow;
     function replace(){
       placeBoxAtWord(el, inner);
-      if (elIcon && innerIcon) placeBoxAtWord(elIcon, innerIcon);
+      if (elIcon && innerIcon) placeBoxAtWord(elIcon, innerIcon, true);
     }
     addEventListener('resize', function(){
       clearTimeout(reflow);
@@ -122,6 +148,19 @@
        take the same speed or the halo would drift out of register. */
     var SPEED = 2;
     var REVEAL_FRAME = 190;
+
+    /* The wordmark comp draws the crown itself, over the W. The crown now
+       belongs on the C, so strip that layer here and let the icon instance
+       — which is the same artwork, and already carries the white cutout —
+       be the only crown on screen. Mutated in place rather than cloned:
+       the icon instance reads its own dataset. */
+    (function stripCrownFromWord(){
+      var comp = (CROWN_ANIM_DATA.assets || []).filter(function(a){
+        return a.id === 'comp_0';
+      })[0];
+      if (!comp) return;
+      comp.layers = comp.layers.filter(function(l){ return l.nm !== 'Crown Icon'; });
+    })();
 
     if (inner && window.lottie) {
       var anim = lottie.loadAnimation({
