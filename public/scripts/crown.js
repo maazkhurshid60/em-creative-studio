@@ -36,10 +36,11 @@
        tipped, like the letter is wearing it. */
     var CROWN_CX = 0.7558;   /* crown centre-x, fraction of box width  */
     var CROWN_BY = 0.4699;   /* crown bottom-y, fraction of box height */
-    var C_CX     = 0.1739;   /* the C's centre-x, nudged for the tilt   */
+    var C_CX     = 0.1550;   /* the C's centre-x, nudged left of true centre
+                                so the tilted crown reads as sitting on the C   */
     var C_TY     = 0.5060;   /* the C's cap-height top                 */
     var SIT_IN   = 0.008;    /* rides just clear of the cap, not resting on it */
-    var TILT     = -28;      /* degrees */
+    var TILT     = -35;      /* degrees, negative = tipped to the left */
     var WEAR     = 0.82;     /* a crown, not a canopy: 59px art over a 42px C */
 
     function placeBoxAtWord(outer, innerEl, isIcon){
@@ -101,6 +102,7 @@
     }
 
     function dock(){
+      replace();          /* last word on placement, after any reflow */
       el.style.transform = 'scale(1)';
       if (elIcon) elIcon.style.transform = 'scale(1)';
       armCutout();
@@ -127,6 +129,27 @@
       reflow = setTimeout(replace, 150);
     }, { passive: true });
     addEventListener('orientationchange', function(){ setTimeout(replace, 300); });
+
+    /* The box is measured against the hidden word slot, and that measurement
+       runs before the webfont has swapped in. The headline reflows when Plus
+       Jakarta Sans arrives and the box was left where the fallback metrics
+       put it — which is why the wordmark sometimes sat off-centre and
+       sometimes did not, depending on whether the font was cached. */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(replace).catch(function(){});
+    }
+
+    /* fonts.ready settles once, but the two families arrive separately, so
+       the headline can reflow again after it has resolved. Watching the
+       headline itself catches every reflow, whatever caused it. */
+    if (window.ResizeObserver && heroSection) {
+      var ro = new ResizeObserver(function(){
+        clearTimeout(reflow);
+        reflow = setTimeout(replace, 120);
+      });
+      var hl = document.querySelector('.hero__hl');
+      if (hl) ro.observe(hl);
+    }
     if (placed && !RM) {
       /* apply the big intro scale with transitions off so it appears
          instantly at full size instead of visibly growing into it -
