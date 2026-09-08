@@ -197,29 +197,7 @@ body.scrolled .nav-pill{
              inset 0 1px 0 rgba(255,255,255,.5);
 }
 
-/* While the mark draws itself the badge is the only thing on screen, so it
-   carries a ring that tracks how far the intro has actually got (crown.js
-   feeds --intro-p). The wait then reads as progress rather than a dead dot.
-   Scoped to .nav-boot, so it is gone the moment the bar opens. */
-body.nav-boot .nav-pill::after{
-  content:"";
-  position:absolute; inset:-9px;
-  border-radius:999px;
-  /* 0deg is already 12 o'clock in a conic gradient, so no `from` offset —
-     adding one starts the sweep off to the side. */
-  background:conic-gradient(
-    var(--nav-ink) calc(var(--intro-p, 0) * 360deg),
-    rgba(76,53,21,.16) 0);
-  -webkit-mask:radial-gradient(farthest-side, #0000 calc(100% - 2px), #000 calc(100% - 2px));
-          mask:radial-gradient(farthest-side, #0000 calc(100% - 2px), #000 calc(100% - 2px));
-  pointer-events:none;
-  animation:navRingIn 700ms var(--ease-out) 900ms both;
-}
-@keyframes navRingIn{
-  from{ opacity:0; transform:scale(.82); }
-  to  { opacity:1; transform:scale(1); }
-}
-/* a slow breath under the ring so the badge never sits perfectly still */
+/* a slow breath on the badge so it never sits perfectly still while it waits */
 body.nav-boot .brand{ animation:navBreathe 3200ms ease-in-out 1100ms infinite; }
 
 /* Once the pill has collapsed to the badge it is a small mark floating over
@@ -390,7 +368,21 @@ body.nav-tucked:not(.nav-open) .nav .btn{
    on a different colour entirely. One ground under both is the only way
    the seam goes away.
    ------------------------------------------------------------------ */
-.atmos{ position:relative; z-index:0; }
+.atmos{
+  position:relative; z-index:0;
+  /* The drifting cloud plate is scaled to 1.10 and panned, and the fluid canvas
+     to 1.07, so both hang past the viewport's edges. Inside the hero that never
+     showed, because the hero clips; out here they were pushing the document
+     wider and giving the page a horizontal scrollbar.
+
+     `clip`, not `hidden`: hidden would make this a scroll container, and the
+     shot's sticky stage would then pin to *this* box instead of the viewport,
+     which kills the whole open-on-scroll effect. `clip` cuts the overflow
+     without creating one. Mixing clip on one axis with visible on the other is
+     legal — the pairing that forces the other axis to `auto` is hidden. */
+  overflow-x:clip;
+  overflow-y:visible;
+}
 .atmos__ground{
   position:absolute; inset:0; z-index:0;
   background:#FFFFFF;
@@ -451,7 +443,7 @@ body.hero-revealed .atmos__clouds{ opacity:1; }
   position:absolute; inset:0;
   width:100%; height:100%;
   pointer-events:none;
-  filter:blur(9px);
+  filter:blur(6px);
   transform:scale(1.07);
   /* Two masks intersected: hollow the headline's area, and fade out before the
      sky ends. Where `mask-composite` is unsupported the layers union instead,
@@ -762,8 +754,11 @@ body.hero-revealed .hero .eyebrow{ animation:heroInRight 820ms var(--ease-out) 1
    single variable keeps the stages in lockstep — anything animated on
    its own timing would drift against the others mid-scroll.
 
-   The stage is sticky in a track two viewports tall, so the scroll
-   distance is what opens the plate; the plate itself never moves.
+   The stage is sticky in a track well over two viewports tall, so the
+   scroll distance is what opens the plate; the plate itself never moves.
+   The plate reaches full bleed with about 60vh of the pin still to run,
+   so it holds there, finished and still, before the next section takes
+   over (see HOLD in scripts/shot.js).
    ------------------------------------------------------------------ */
 .shot{
   --sp:0;   /* open progress, 0 closed → 1 full bleed */
@@ -772,31 +767,30 @@ body.hero-revealed .hero .eyebrow{ animation:heroInRight 820ms var(--ease-out) 1
   position:relative;
   /* no background of its own — it stands on .atmos with the hero */
 }
-.shot__track{ height:220vh; }
+/* 100vh of that is the stage itself; of the remaining 160 the plate spends
+   ~100vh opening and ~60vh held wide open. */
+.shot__track{ height:260vh; }
 .shot__stage{
   position:sticky; top:0;
   height:100svh; height:100vh;
-  /* column so justify-content centres on the vertical axis and the frame's
-     percentage height still resolves against a definite container */
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  /* margin closes as the plate opens */
-  padding:calc(var(--shot-gut) * (1 - var(--sp)));
-  box-sizing:border-box;
+  /* No flex, no padding: the plate fills the stage and the opening is done
+     with a clip, so nothing here changes size while you scroll. */
+  display:block;
 }
 .shot__frame{
   position:relative;
   margin:0;
-  flex:none;
-  /* The plate is always the full stage. Nothing about its box is animated
-     except the gutter around it (on the stage) and its corners — the whole
-     gesture is an inset panel losing its inset, which is why you only ever
-     meet its top edge first rather than a small card floating in paper. */
-  width:100%;
-  height:100%;
-  border-radius:calc(var(--r-lg) * (1 - var(--sp)));
+  width:100%; height:100%;
   overflow:hidden;
   background:var(--linen);
-  box-shadow:0 30px 80px -40px rgba(30,21,9,calc(.55 * (1 - var(--sp))));
+  /* The whole open-out is one clip-path. Animating padding/width/height meant
+     re-laying out the plate, the photo, both canvases and the copy on every
+     scroll frame; a clip is paint-only, and it reads better besides — the
+     image is revealed rather than stretched, which is what the reference does.
+     No box-shadow here: clip-path would cut it off anyway. */
+  clip-path:inset(
+    calc(var(--shot-gut) * (1 - var(--sp)))
+    round calc(var(--r-lg) * (1 - var(--sp))));
 }
 /* The plate arrives last, rising into the peek position once the hero copy has
    landed. Held at opacity 0 until then rather than merely offset, so it never
@@ -804,7 +798,7 @@ body.hero-revealed .hero .eyebrow{ animation:heroInRight 820ms var(--ease-out) 1
    frame, not the stage: the stage is the sticky element and must not be moved. */
 .shot__frame{ opacity:0; transform:translateY(130px); }
 body.hero-revealed .shot__frame{
-  animation:shotRise 1150ms var(--ease-out) 980ms both;
+  animation:shotRise 1250ms var(--ease-out) 1650ms both;
 }
 @keyframes shotRise{
   from{ opacity:0; transform:translateY(130px); }
@@ -825,7 +819,7 @@ body.hero-revealed .shot__frame{
   position:absolute; inset:0;
   width:100%; height:100%;
   pointer-events:none;
-  filter:blur(11px);
+  filter:blur(7px);
   transform:scale(1.06);
   -webkit-mask-image:linear-gradient(180deg,
               #000 0%, #000 44%, rgba(0,0,0,.34) 76%, transparent 95%);
@@ -904,8 +898,9 @@ body.hero-revealed .shot__frame{
 }
 
 @media (max-width:720px){
-  /* A 220vh pin is a long thumb-scroll on a phone for one gesture. */
-  .shot__track{ height:170vh; }
+  /* A full-length pin is a long thumb-scroll on a phone for one gesture, so
+     the whole run is shorter — ~62vh opening, ~38vh held. */
+  .shot__track{ height:200vh; }
 }
 
 /* No pin, no growth — just the plate, with the buttons already on it. */
@@ -915,6 +910,7 @@ body.hero-revealed .shot__frame{
   .shot__stage{ position:static; height:auto; padding:var(--shot-gut); }
   .shot__frame{
     width:100%; height:auto; aspect-ratio:4/3;
+    clip-path:none !important;
     opacity:1 !important; transform:none !important; animation:none !important;
   }
   .shot__lede .w{ opacity:1 !important; }

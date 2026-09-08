@@ -212,9 +212,9 @@
         var docked = false;
         var onFrame = function(){
           if (docked) return;
-          /* drives the progress ring drawn around the collapsed nav badge */
-          var p = Math.min(1, Math.max(0, anim.currentFrame / REVEAL_FRAME));
-          document.documentElement.style.setProperty('--intro-p', p.toFixed(4));
+          /* This used to also write --intro-p for a progress ring around the
+             nav badge. The ring is gone, so the write went with it rather than
+             staying as a style mutation on every frame of the intro. */
           if (anim.currentFrame < REVEAL_FRAME) return;
           docked = true;
           anim.removeEventListener('enterFrame', onFrame);

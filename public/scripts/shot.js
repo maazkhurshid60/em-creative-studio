@@ -6,10 +6,10 @@
  * radius, height, veil, buttons) is a function of it in CSS, so the stages
  * cannot drift apart the way separately-timed animations do.
  *
- * The number reaches 1 at 82% of the pinned distance rather than at the very
- * end, which leaves a beat of full-bleed before the next section arrives —
- * without it the plate finishes opening exactly as it leaves, and the payoff
- * is never actually on screen.
+ * The number reaches 1 well before the end of the pinned distance — at HOLD —
+ * and the remaining scroll is spent held wide open. Without that beat the plate
+ * finishes opening exactly as it leaves and the payoff is never actually on
+ * screen; the track is sized so the held part is roughly half a viewport.
  */
 (function () {
   var sec = document.getElementById('shot');
@@ -21,7 +21,8 @@
   var track = sec.querySelector('.shot__track');
   if (!track) return;
 
-  var HOLD = 0.82;
+  // Fraction of the pinned run spent opening; the rest is the held beat.
+  var HOLD = 0.62;
   var queued = false;
   var lastP = -1;
   var lastE = -1;
@@ -40,8 +41,9 @@
        moment the pin engaged. */
     var e = clamp01(1 - r.top / vh);
 
-    /* Open: how far through the pinned run we are. Reaching 1 early leaves a
-       held beat of full bleed before the next section arrives. */
+    /* Open: how far through the pinned run we are. Reaching 1 at HOLD leaves
+       the last (1 - HOLD) of the run as a held beat of full bleed, so the
+       finished plate sits still for a moment before the next section. */
     var span = (r.height - vh) * HOLD;
     var p = span > 0 ? clamp01(-r.top / span) : 0;
 

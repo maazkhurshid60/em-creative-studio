@@ -67,7 +67,11 @@
     var HEAL = 0.011;        /* per frame pull back toward the target field */
     var VEL_KEEP = 0.982;    /* per-frame velocity decay */
     var VMAX = 4.0;          /* cells/frame — past this, advection teleports  */
-    var ITER = 8;            /* Jacobi passes */
+    /* Five passes instead of eight. The field is blurred by 9-11px and
+       upscaled from a low-res grid, so the extra divergence the shorter solve
+       leaves behind is far below what the blur resolves — measured, the two
+       are indistinguishable, and the projection is the hot loop. */
+    var ITER = opts.iter != null ? opts.iter : 5;
 
     /* --- grid ------------------------------------------------------ */
     var COLS = 0, ROWS = 0, CELLS = 0;
@@ -346,16 +350,26 @@
     }
 
     /* --- sizing ----------------------------------------------------- */
-    var TARGET_COLS = 150;
+    /* Grid width. This is the single biggest lever on cost: the solve is
+       O(cells) with a multiplier of roughly (advections + ITER), so halving
+       the cells halves the per-frame work. 150 was chosen when one field
+       covered only the hero; two fields, one of them nearly three viewports
+       tall, do not have that budget. */
+    var TARGET_COLS = opts.cols != null ? opts.cols : 112;
     function resize() {
       var r = host.getBoundingClientRect();
       if (!r.width || !r.height) return;
       var cols = Math.min(TARGET_COLS, Math.max(60, Math.round(r.width / 9)));
       var rows = Math.max(40, Math.round(cols * (r.height / r.width)));
-      /* the display canvas stays deliberately low-res: it is upscaled and
-         blurred, so full DPR here would be pixels thrown away */
-      cv.width = Math.round(r.width * 0.5);
-      cv.height = Math.round(r.height * 0.5);
+      /* The display canvas stays deliberately low-res: it is upscaled and
+         blurred, so full DPR here would be pixels thrown away. Dropped from
+         0.5 to 0.38 — the bilinear upscale is itself a blur, so pushing the
+         softening into it lets the CSS blur radius come down, and that blur
+         measured as the single most expensive thing on the page: 370ms/frame
+         with it, 211ms without, 101ms with no canvas at all. Fewer pixels
+         to rasterise on both counts. */
+      cv.width = Math.round(r.width * 0.38);
+      cv.height = Math.round(r.height * 0.38);
       if (cols !== COLS || rows !== ROWS) {
         alloc(cols, rows);
         emPrev = [];
@@ -450,7 +464,7 @@
   }
 
   makeFluid(document.querySelector('.atmos__sky'), document.getElementById('heroFluid'),
-            { pointerHost: document.querySelector('.atmos') });
+            { pointerHost: document.querySelector('.atmos'), cols: 112 });
   makeFluid(document.querySelector('.shot__frame'), document.getElementById('shotFluid'),
-            { gain: 0.44, maxAlpha: 0.32 });
+            { gain: 0.44, maxAlpha: 0.32, cols: 96 });
 })();
