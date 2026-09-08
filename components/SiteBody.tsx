@@ -20,6 +20,7 @@ export default function SiteBody() {
       <Script src="/scripts/crown.js" strategy="afterInteractive" />
       <Script src="/scripts/fluid.js" strategy="afterInteractive" />
       <Script src="/scripts/grid.js" strategy="afterInteractive" />
+      <Script src="/scripts/shot.js" strategy="afterInteractive" />
     </>
   );
 }

@@ -42,10 +42,19 @@ export const SITE_BODY_HTML = `
 </header>
 
 <!-- ============================== HERO ========================= -->
+<!-- The hero and the shot plate share one sky. The white ground and the
+     painted cloud plate used to live inside the hero, which put a hard seam
+     across the page wherever the hero ended; they belong to the pair, so they
+     sit on the wrapper and both sections ride on top of them. -->
+<div class="atmos">
+  <div class="atmos__ground"></div>
+  <div class="atmos__clouds" aria-hidden="true"></div>
+  <div class="atmos__sky" aria-hidden="true">
+    <canvas class="atmos__fluid" id="heroFluid"></canvas>
+  </div>
+  <div class="atmos__weave" aria-hidden="true"></div>
+
 <section class="hero" id="top">
-  <div class="hero__ground"></div>
-  <div class="hero__clouds" aria-hidden="true"></div>
-  <canvas class="hero__fluid" id="heroFluid" aria-hidden="true"></canvas>
 
   <div class="liquid liquid--a" aria-hidden="true">
     <div class="liquid__inner">
@@ -55,7 +64,6 @@ export const SITE_BODY_HTML = `
   </div>
 
   <div class="hero__scrim" aria-hidden="true"></div>
-  <div class="hero__weave" aria-hidden="true"></div>
 
   <div class="hero__inner">
     <span class="eyebrow">Los Angeles &middot; Studio since 2019</span>
@@ -79,17 +87,54 @@ export const SITE_BODY_HTML = `
   <div class="hero__lottie" id="heroCrownLottie" aria-hidden="true"><div id="heroCrownLottieInner"></div></div>
   <div class="hero__lottie" id="heroCrownLottieIcon" aria-hidden="true"><div id="heroCrownLottieIconInner"></div></div>
 
-  <p class="hero__lede">
-    <strong>Search, web design and brand systems</strong> for companies that refuse to blend in.
-  </p>
+</section>
 
-  <div class="hero__acts">
-    <a class="btn btn--dark" href="#contact" data-hot>
-      Book a 30-minute call <svg width="17" height="10" viewBox="0 0 17 10"><use href="#arw"/></svg>
-    </a>
-    <a class="btn btn--ghost" href="#work" data-hot>See the work</a>
+<!-- ====================== HERO SHOT ======================
+     Sits directly under the hero and opens out as you scroll: the plate
+     starts inset with the paper showing around it, then loses its margin
+     and its corners until it is full bleed, and the calls to action fade
+     up over it. The stage is sticky inside a tall track, so the scroll
+     distance drives the growth instead of moving the plate down the page.
+     ======================================================= -->
+<section class="shot" id="shot">
+  <div class="shot__track">
+    <div class="shot__stage">
+      <figure class="shot__frame">
+        <img
+          class="shot__img"
+          src="/images/hero-shot.webp"
+          srcset="/images/hero-shot-sm.webp 1200w, /images/hero-shot.webp 2400w"
+          sizes="100vw"
+          width="2400" height="1357"
+          alt="A sunlit modern living room, warm plaster and oak, someone walking through"
+          decoding="async">
+        <!-- second fluid field, over the photograph rather than the paper.
+             Sits before the veil so the veil still darkens everything under
+             the copy; both rely on DOM order, so nothing here takes a
+             z-index (giving the canvas one would lift it over both). -->
+        <canvas class="shot__fluid" id="shotFluid" aria-hidden="true"></canvas>
+        <div class="shot__veil" aria-hidden="true"></div>
+        <figcaption class="shot__copy">
+          <!-- Each word carries its index so the reveal can sweep across the
+               line as the plate opens, rather than the whole block fading at
+               once. The wipe is a function of scroll progress, so it tracks
+               the scroll instead of running on its own clock. -->
+          <p class="shot__lede">
+            <strong><span class="w" style="--i:0">Search,</span> <span class="w" style="--i:1">web</span> <span class="w" style="--i:2">design</span> <span class="w" style="--i:3">and</span> <span class="w" style="--i:4">brand</span> <span class="w" style="--i:5">systems</span></strong>
+            <span class="w" style="--i:6">for</span> <span class="w" style="--i:7">companies</span> <span class="w" style="--i:8">that</span> <span class="w" style="--i:9">refuse</span> <span class="w" style="--i:10">to</span> <span class="w" style="--i:11">blend</span> <span class="w" style="--i:12">in.</span>
+          </p>
+          <div class="shot__acts">
+            <a class="btn btn--paper" href="#contact" data-hot>
+              Book a 30-minute call <svg width="17" height="10" viewBox="0 0 17 10"><use href="#arw"/></svg>
+            </a>
+            <a class="btn btn--ghost" href="#work" data-hot>See the work</a>
+          </div>
+        </figcaption>
+      </figure>
+    </div>
   </div>
 </section>
+</div><!-- /.atmos -->
 
 
 <!-- ===================== MARQUEE (minimal) ===================== -->

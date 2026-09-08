@@ -371,31 +371,56 @@ body.nav-tucked:not(.nav-open) .nav .btn{
    ================================================================== */
 .hero{
   position:relative;
-  min-height:100svh; min-height:100vh;
+  /* Short of a full screen on purpose. The plate below fills its own 100vh
+     stage, so whatever the hero gives back is exactly how much of the plate's
+     top edge shows at the foot of the first screen — about 230px here, which
+     is enough to read as "there is a photograph under this" without competing
+     with the wordmark. With the lede moved onto the plate there is room. */
+  min-height:68svh; min-height:68vh;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   padding:clamp(84px,11vh,118px) var(--gut) clamp(24px,4vh,44px);
   overflow:hidden;
   text-align:center;
 }
-.hero__ground{
+/* ------------------------------------------------------------------
+   ATMOS — the sky the hero and the shot plate both stand on.
+
+   These two layers used to be the hero's own background, which meant the
+   weather stopped dead at the hero's bottom edge and the plate below sat
+   on a different colour entirely. One ground under both is the only way
+   the seam goes away.
+   ------------------------------------------------------------------ */
+.atmos{ position:relative; z-index:0; }
+.atmos__ground{
   position:absolute; inset:0; z-index:0;
   background:#FFFFFF;
 }
+/* Both sections make their own stacking context so their internal z-index
+   stacks stay local and simply sit above the sky. */
+.hero, .shot{ z-index:1; }
 /* Painted cloud plate. Procedural noise on a 150-cell solver grid can only
    ever be soft blobs; the banks and feathered skirts that make this read as
    weather need real resolution, so the artwork is generated offline (see the
    generator in the scratchpad) and shipped as a plate. It drifts very slowly
    and the fluid canvas above it supplies the interaction. */
-.hero__clouds{
-  position:absolute; inset:0; z-index:1;
+.atmos__clouds{
+  position:absolute; left:0; right:0; top:0; z-index:0;
+  /* Bounded rather than inset:0. The wrapper is nearly three viewports tall
+     because of the shot's pinned track, and `cover` over that would blow the
+     plate up until the banks were featureless. This is the only part anyone
+     sees — past it the opened plate covers the screen — and it fades out so
+     the cut-off is never a line. */
+  height:168vh;
   pointer-events:none;
-  background:url("/images/cloud-plate.webp") center / cover no-repeat;
+  background:url("/images/cloud-plate.webp") center top / cover no-repeat;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 74%,transparent 100%);
+          mask-image:linear-gradient(180deg,#000 0%,#000 74%,transparent 100%);
   opacity:0;
   transition:opacity 2200ms var(--ease-out);
   will-change:transform;
   animation:cloudDrift 78s ease-in-out infinite;
 }
-body.hero-revealed .hero__clouds{ opacity:1; }
+body.hero-revealed .atmos__clouds{ opacity:1; }
 /* scaled past the frame throughout, so the pan never walks an edge into view */
 @keyframes cloudDrift{
   0%   { transform:scale(1.10) translate3d(-1.1%, -0.5%, 0); }
@@ -408,24 +433,41 @@ body.hero-revealed .hero__clouds{ opacity:1; }
    softening, so rendering it sharp would only burn fill rate. The scale
    hides the blur's feathered edge, which would otherwise show as a pale
    rim inside the hero. Fades in only once the solver is actually live. */
-.hero__fluid{
-  position:absolute; inset:0; z-index:2;
+/* The pointer-driven field, spanning the hero AND the plate below it. It used
+   to be the hero's own layer, which is exactly what put a hard warm/white edge
+   across the page at the hero's bottom — the dye simply stopped there. The sky
+   is the untransformed box the solver measures against; the canvas inside it
+   carries the scale and blur, so measuring the canvas would feed the solver an
+   already-inflated rect.
+
+   Bounded to the same 168vh as the cloud plate: past that the opened plate
+   covers the screen, so there is nothing to paint. */
+.atmos__sky{
+  position:absolute; left:0; right:0; top:0; z-index:0;
+  height:168vh;
+  pointer-events:none;
+}
+.atmos__fluid{
+  position:absolute; inset:0;
   width:100%; height:100%;
   pointer-events:none;
   filter:blur(9px);
   transform:scale(1.07);
-  /* hollow out the middle so the weather gathers around the copy instead
-     of behind it — cheaper and steadier than trying to keep the solver
-     out of the centre, which the pointer would undo the moment it
-     crossed the headline */
-  -webkit-mask-image:radial-gradient(54% 42% at 50% 48%,
-              transparent 0%, rgba(0,0,0,.55) 48%, #000 84%);
-          mask-image:radial-gradient(54% 42% at 50% 48%,
-              transparent 0%, rgba(0,0,0,.55) 48%, #000 84%);
+  /* Two masks intersected: hollow the headline's area, and fade out before the
+     sky ends. Where `mask-composite` is unsupported the layers union instead,
+     which only means slightly more weather — never a broken mask. */
+  -webkit-mask-image:
+    radial-gradient(58% 15% at 50% 19%, transparent 0%, rgba(0,0,0,.55) 46%, #000 82%),
+    linear-gradient(180deg, #000 0%, #000 58%, transparent 94%);
+  -webkit-mask-composite:source-in;
+          mask-image:
+    radial-gradient(58% 15% at 50% 19%, transparent 0%, rgba(0,0,0,.55) 46%, #000 82%),
+    linear-gradient(180deg, #000 0%, #000 58%, transparent 94%);
+          mask-composite:intersect;
   opacity:0;
-  transition:opacity 1600ms var(--ease-out);
+  transition:opacity 1400ms var(--ease-out);
 }
-.hero__fluid.is-live{ opacity:1; }
+.atmos__fluid.is-live{ opacity:1; }
 
 /* the ground is plain white now, so the sand wash this used to lay over it
    only read as a grey smudge behind the headline. Kept as a layer (the JS
@@ -434,8 +476,11 @@ body.hero-revealed .hero__clouds{ opacity:1; }
   position:absolute; inset:0; z-index:2; pointer-events:none;
   background:none;
 }
-.hero__weave{
-  position:absolute; inset:0; z-index:3; pointer-events:none;
+/* Grain over the whole sky, not just the hero — it was the last layer that
+   stopped at the hero's edge, and a texture that ends mid-page is a seam
+   however soft the colours either side of it are. */
+.atmos__weave{
+  position:absolute; inset:0; z-index:0; pointer-events:none;
   opacity:.30; mix-blend-mode:soft-light;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8 0.012' numOctaves='2' seed='7'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:300px 300px;
@@ -582,7 +627,6 @@ body.hero-revealed #heroCrownLottieIconInner{ filter:url(#crownCutout); }
 /* ---- hide the hero copy (not the nav - that stays usable) until the
    crown intro docks ------------------------------------------------- */
 .hero__inner{ visibility:hidden; }
-.hero__lede, .hero__acts{ visibility:hidden; }
 #crownWordSlot{ visibility:hidden; }
 /* The Lottie wordmark is drawn over this slot at 1.8x the line height, so
    inline it overhangs the lines above and below. Wide screens have room;
@@ -590,27 +634,18 @@ body.hero-revealed #heroCrownLottieIconInner{ filter:url(#crownCutout); }
    own line keeps the overhang in the leading instead of in the copy. */
 @media (max-width:720px){
   #crownWordSlot{ display:block; }
-  .hero__lede{ margin-top:clamp(18px,4vh,32px); }
 }
-body.hero-revealed .hero__inner,
-body.hero-revealed .hero__lede,
-body.hero-revealed .hero__acts{ visibility:visible; }
+body.hero-revealed .hero__inner{ visibility:visible; }
 
 /* ---- the copy rides in while the mark is still scaling down, so the dock
    and the reveal read as one gesture rather than a graphic landing and then
    a page appearing. Everything drifts in from the right, staggered behind the
-   headline's own mask-up. The buttons are faded rather than transformed —
-   an animation with a fill would otherwise pin their transform and kill the
-   :active press. ------------------------------------------------------- */
-.hero .eyebrow, .hero__lede, .hero__acts{
+   headline's own mask-up. The calls to action used to close this sequence;
+   they now live on the shot plate below, where the scroll reveals them. --- */
+.hero .eyebrow{
   opacity:0; transform:translateX(52px);
 }
 body.hero-revealed .hero .eyebrow{ animation:heroInRight 820ms var(--ease-out) 100ms both; }
-body.hero-revealed .hero__lede{ animation:heroInRight 820ms var(--ease-out) 540ms both; }
-body.hero-revealed .hero__acts{ animation:heroInRight 820ms var(--ease-out) 680ms both; }
-.hero__acts > *{ opacity:0; }
-body.hero-revealed .hero__acts > *:nth-child(1){ animation:heroFade 560ms ease 780ms both; }
-body.hero-revealed .hero__acts > *:nth-child(2){ animation:heroFade 560ms ease 880ms both; }
 @keyframes heroInRight{
   from{ opacity:0; transform:translateX(52px); }
   to  { opacity:1; transform:none; }
@@ -618,8 +653,7 @@ body.hero-revealed .hero__acts > *:nth-child(2){ animation:heroFade 560ms ease 8
 @keyframes heroFade{ from{ opacity:0; } to{ opacity:1; } }
 
 @media (prefers-reduced-motion:reduce){
-  .hero__inner, .hero__lede, .hero__acts{ visibility:visible !important; opacity:1 !important; }
-  .hero__acts > *{ opacity:1 !important; animation:none !important; }
+  .hero__inner{ visibility:visible !important; opacity:1 !important; }
 }
 
 /* ---- the fan ----------------------------------------------------- */
@@ -718,24 +752,182 @@ body.hero-revealed .hero__acts > *:nth-child(2){ animation:heroFade 560ms ease 8
 .bub--c{ background:var(--paper);    color:var(--espresso); box-shadow:0 6px 18px -8px rgba(30,21,9,.4); }
 
 /* ---- foot -------------------------------------------------------- */
-.hero__lede{
-  position:relative; z-index:5;
-  max-width:40ch; margin:clamp(18px,2.8vh,28px) auto 0;
-  font-size:clamp(14px,1.15vw,17px); line-height:1.5;
-  color:rgba(30,21,9,.62);
+/* ------------------------------------------------------------------
+   HERO SHOT — the plate under the hero that opens out on scroll.
+
+   Progress is one number, --sp (0 at rest, 1 fully open), written by
+   scripts/shot.js every frame. Everything here is a function of it: the
+   paper margin closes, the corners square off, the plate grows to the
+   full viewport, and the buttons rise out of it. Driving layout from a
+   single variable keeps the stages in lockstep — anything animated on
+   its own timing would drift against the others mid-scroll.
+
+   The stage is sticky in a track two viewports tall, so the scroll
+   distance is what opens the plate; the plate itself never moves.
+   ------------------------------------------------------------------ */
+.shot{
+  --sp:0;   /* open progress, 0 closed → 1 full bleed */
+  --se:0;   /* entry progress: how far the plate has risen into view */
+  --shot-gut: clamp(14px, 3.2vw, 56px);
+  position:relative;
+  /* no background of its own — it stands on .atmos with the hero */
 }
-.hero__lede strong{ color:var(--espresso); font-weight:500; }
-.hero__acts{
-  position:relative; z-index:5;
-  display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
-  margin-top:clamp(14px,2.2vh,20px);
+.shot__track{ height:220vh; }
+.shot__stage{
+  position:sticky; top:0;
+  height:100svh; height:100vh;
+  /* column so justify-content centres on the vertical axis and the frame's
+     percentage height still resolves against a definite container */
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  /* margin closes as the plate opens */
+  padding:calc(var(--shot-gut) * (1 - var(--sp)));
+  box-sizing:border-box;
+}
+.shot__frame{
+  position:relative;
+  margin:0;
+  flex:none;
+  /* The plate is always the full stage. Nothing about its box is animated
+     except the gutter around it (on the stage) and its corners — the whole
+     gesture is an inset panel losing its inset, which is why you only ever
+     meet its top edge first rather than a small card floating in paper. */
+  width:100%;
+  height:100%;
+  border-radius:calc(var(--r-lg) * (1 - var(--sp)));
+  overflow:hidden;
+  background:var(--linen);
+  box-shadow:0 30px 80px -40px rgba(30,21,9,calc(.55 * (1 - var(--sp))));
+}
+/* The plate arrives last, rising into the peek position once the hero copy has
+   landed. Held at opacity 0 until then rather than merely offset, so it never
+   flashes at its resting place on a slow first paint. The travel is on the
+   frame, not the stage: the stage is the sticky element and must not be moved. */
+.shot__frame{ opacity:0; transform:translateY(130px); }
+body.hero-revealed .shot__frame{
+  animation:shotRise 1150ms var(--ease-out) 980ms both;
+}
+@keyframes shotRise{
+  from{ opacity:0; transform:translateY(130px); }
+  to  { opacity:1; transform:none; }
+}
+
+.shot__img{
+  width:100%; height:100%;
+  object-fit:cover; object-position:center 42%;
+  display:block;
+}
+/* The same weather as the hero, running on the plate. Masked away toward the
+   foot so it never drifts across the lede and the buttons, and kept softer
+   than the hero's field — over a photograph this reads as light and haze
+   moving through the room, and at the hero's density it would just look like
+   the image had fogged up. */
+.shot__fluid{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  pointer-events:none;
+  filter:blur(11px);
+  transform:scale(1.06);
+  -webkit-mask-image:linear-gradient(180deg,
+              #000 0%, #000 44%, rgba(0,0,0,.34) 76%, transparent 95%);
+          mask-image:linear-gradient(180deg,
+              #000 0%, #000 44%, rgba(0,0,0,.34) 76%, transparent 95%);
+  opacity:0;
+  transition:opacity 1600ms var(--ease-out);
+}
+.shot__fluid.is-live{ opacity:.88; }
+
+/* The buttons sit on a bright plaster wall, so they need their own ground to
+   stay legible — and the darkening is also what carries the eye out of the
+   hero. It starts as the plate rises past the hero's bottom edge (--se), then
+   deepens as the plate opens (--sp), so there is never a hard switch-on. */
+.shot__veil{
+  position:absolute; inset:0;
+  pointer-events:none;
+  background:linear-gradient(
+    180deg,
+    rgba(30,21,9,calc(.18 * var(--se) + .22 * var(--sp))) 0%,
+    rgba(30,21,9,calc(.34 * var(--se) + .26 * var(--sp))) 50%,
+    rgba(30,21,9,calc(.48 * var(--se) + .22 * var(--sp))) 100%);
+}
+.shot__copy{
+  /* Centred in the plate rather than sitting at its foot: the line is the
+     statement, so it takes the middle and the buttons hang below it. */
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:clamp(26px,6vh,66px);
+  padding:clamp(22px,5vh,58px) var(--gut);
+  text-align:center;
+}
+/* The studio's line, moved off the hero and onto the plate so it lands on the
+   photograph rather than on blank paper. It rides the same reveal as the
+   buttons, a beat ahead of them. */
+.shot__lede{
+  margin:0; max-width:20ch;
+  font-family:var(--display);
+  font-weight:600;
+  font-size:clamp(24px,3vw,46px);
+  line-height:1.12;
+  letter-spacing:-.018em;
+  color:var(--paper);
+  text-shadow:0 2px 30px rgba(30,21,9,.5);
+}
+/* The line lights up a word at a time as the plate opens. Each word's ramp is
+   its own index pushed along the progress track, so the wipe reads left to
+   right; the floor is a dim state rather than nothing, which is what makes it
+   look like the sentence is being lit rather than typed in.
+
+   --i is the word's position, set inline in the markup. The whole thing is a
+   function of --sp, so scrubbing the scroll backwards unlights it again. */
+.shot__lede .w{
+  opacity:clamp(.26, calc((var(--sp) - .2 - var(--i) * .027) * 10), 1);
+}
+.shot__lede strong{ color:var(--paper); font-weight:500; }
+/* Held back until the plate is most of the way open, then lifted in. The
+   clamp keeps it from flickering at the very start of the range. */
+.shot__acts{
+  display:flex; align-items:center; justify-content:center;
+  gap:10px; flex-wrap:wrap;
+  opacity:clamp(0, calc((var(--sp) - .58) * 4), 1);
+  transform:translateY(calc(22px * (1 - clamp(0, calc((var(--sp) - .58) * 4), 1))));
+}
+.shot .btn--ghost{
+  color:var(--paper);
+  border-color:rgba(244,243,239,.5);
+  background:rgba(244,243,239,.08);
+  backdrop-filter:blur(6px);
+}
+@media (hover:hover) and (pointer:fine){
+  .shot .btn--ghost:hover{
+    background:var(--paper); color:var(--cta); border-color:var(--paper);
+  }
+}
+
+@media (max-width:720px){
+  /* A 220vh pin is a long thumb-scroll on a phone for one gesture. */
+  .shot__track{ height:170vh; }
+}
+
+/* No pin, no growth — just the plate, with the buttons already on it. */
+@media (prefers-reduced-motion:reduce){
+  .shot{ --sp:0 !important; --se:1 !important; }
+  .shot__track{ height:auto; }
+  .shot__stage{ position:static; height:auto; padding:var(--shot-gut); }
+  .shot__frame{
+    width:100%; height:auto; aspect-ratio:4/3;
+    opacity:1 !important; transform:none !important; animation:none !important;
+  }
+  .shot__lede .w{ opacity:1 !important; }
+  .shot__acts{ opacity:1 !important; transform:none !important; }
 }
 
 @media (max-width:900px){
   .fan{ height:clamp(196px,26vh,240px); }
 }
 @media (max-width:720px){
-  .hero{ padding-top:clamp(92px,13vh,130px); }
+  /* The gutter is tiny on a phone, so less has to be given back for the
+     same-sized peek — and the headline needs the height. */
+  .hero{ padding-top:clamp(92px,13vh,130px); min-height:76svh; min-height:76vh; }
   .hero__hl{ font-size:clamp(1.85rem,8.6vw,3.1rem); max-width:14ch; letter-spacing:-.028em; }
   .fan{ height:150px; }
   .fan-card{ width:96px; margin-left:-48px; }
@@ -1511,10 +1703,10 @@ body.hero-revealed .hero__acts > *:nth-child(2){ animation:heroFade 560ms ease 8
 @media (prefers-reduced-motion:reduce){
   html{ scroll-behavior:auto; }
   [data-rise]{ opacity:1 !important; transform:none !important; }
-  .hero__fluid{ display:none !important; }
-  .hero__clouds{ animation:none !important; transform:scale(1.10) !important; }
+  .atmos__fluid, .shot__fluid{ display:none !important; }
+  .atmos__clouds{ animation:none !important; transform:scale(1.10) !important; }
   .sec, .quote{ transition:none !important; }
-  .hero .eyebrow,.hero__lede,.hero__acts,.bub{ opacity:1 !important; transform:none !important; animation:none !important; }
+  .hero .eyebrow,.bub{ opacity:1 !important; transform:none !important; animation:none !important; }
   .hero__hl .w > i{ transform:none !important; animation:none !important; }
   .fan.armed .fan-card{ opacity:1 !important; }
   .liquid{ transform:none !important; }
