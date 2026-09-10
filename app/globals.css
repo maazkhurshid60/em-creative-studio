@@ -579,7 +579,10 @@ body.crown-drawing .crown-draw__full{
 body.crown-docked .hero.lit .liquid__sheen{ opacity:var(--crown-op); }
 
 .liquid--a{                      /* upper right crown, whole and readable */
-  --r0:12deg; --drift:24s;
+  /* rest angle. It leaned 12deg, which read as a wonky crown once the mark
+     docks under the headline word - upright there, and the float loop still
+     gives it its couple of degrees of drift either side. */
+  --r0:0deg; --drift:24s;
   width:min(29vw, 400px);
   right:2%; top:4%;
 }

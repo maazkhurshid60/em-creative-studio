@@ -41,14 +41,18 @@
      as large as that position allows. The hero clips, so the limit is the
      distance from the chosen centre to the NEARER edge - centring lower buys
      width but spends height, and the size has to respect what is left.
-     Everything is measured against the mark's TILTED extent: it rests at 12
-     degrees, and at that angle the corners reach well past the artwork's own
-     box (a 500-wide mark needs 560 of room). */
+     Everything is measured against the mark's extent AT ITS REST ANGLE: off
+     the square, the corners reach past the artwork's own box (at 12 degrees a
+     500-wide mark needed 560 of room). The angle is read from --r0 rather than
+     written down twice - the float loop in main.js applies that same custom
+     property, so a change there cannot leave these two disagreeing. */
   var CENTRE_Y = 0.54;  /* of the hero's height, from its top */
   var INTRO_W  = 0.46;  /* widest the tilted mark may get, as a fraction of the hero */
   var FIT      = 0.94;  /* never let the spikes touch the edge */
   var AR = 900 / 625;
-  var TILT = 12 * Math.PI / 180;     /* --r0 on .liquid--a */
+  var LIQ  = document.querySelector('.liquid--a');
+  var TILT = (parseFloat(getComputedStyle(LIQ).getPropertyValue('--r0')) || 0)
+             * Math.PI / 180;
 
   /* A mark of upright width W, tilted, needs this much room each way. */
   var CO = Math.cos(TILT), SI = Math.sin(TILT);

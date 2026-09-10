@@ -164,11 +164,15 @@ if (hero && liquids.length && !RM) {
     depth: el.classList.contains('liquid--b') ? 24 : 14,   /* parallax reach */
     ox:0, oy:0,                               /* eased pointer offset */
     corner: el.classList.contains('liquid--b') ? -1 : 1,   /* drift-in direction */
-    introDelay: el.classList.contains('liquid--b') ? 220 : 0  /* matches CSS stagger */
+    introDelay: el.classList.contains('liquid--b') ? 220 : 0, /* matches CSS stagger */
+    docks: el.classList.contains('liquid--a')   /* the one that parks under the word */
   }));
   const INTRO_MS = 1500;
 
   let visible = true, t0 = performance.now();
+  /* how much of the ambient lean is allowed through: 1 while the mark is
+     floating in the hero, 0 once it has docked under the headline word. */
+  let lean = 1;
 
   /* a whisper of parallax: the forms lean a few px toward the pointer,
      heavily eased, so it feels like the surface noticing you rather than
@@ -194,6 +198,14 @@ if (hero && liquids.length && !RM) {
 
   function frame(now){
     const t = (now - t0) / 1000;
+
+    /* Docked, the crown sits beside type and any lean reads as a wonky crown
+       rather than as motion, so the rotation and skew fade out while the drift
+       in x and y carries on - it still breathes, it just stops leaning. Eased,
+       not switched: snapping away whatever tilt it happened to be holding
+       would be a visible jolt. */
+    const wantLean = document.body.classList.contains('crown-docked') ? 0 : 1;
+    lean += (wantLean - lean) * 0.035;
 
     const dt = now - lastT; lastT = now;
     if (t > 3) {
@@ -231,7 +243,8 @@ if (hero && liquids.length && !RM) {
 
       f.inner.style.transform =
         `translate3d(${(wx + f.ox * g + introX).toFixed(2)}px, ${(wy + f.oy * g + introY).toFixed(2)}px, 0) ` +
-        `rotate(${(f.r0 + wr + introR).toFixed(2)}deg) skewY(${wk.toFixed(2)}deg) ` +
+        `rotate(${(f.r0 + wr * (f.docks ? lean : 1) + introR).toFixed(2)}deg) ` +
+        `skewY(${(wk * (f.docks ? lean : 1)).toFixed(2)}deg) ` +
         `scale(${(sx * introS).toFixed(4)}, ${(sy * introS).toFixed(4)})`;
     }
 
