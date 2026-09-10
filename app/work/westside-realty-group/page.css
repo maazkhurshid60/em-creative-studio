@@ -775,3 +775,15 @@ body.nav-tucked:not(.nav-open) .nav .btn{
   letter-spacing:-.02em;
   line-height:1; }
 .foot__header .brand img{ height:40px; width:auto; display:block; }
+
+/* The headline ships as plain text - it has to, so it is there for a crawler
+   and for a browser with no JS. The script then splits it into words to
+   animate them, and until it has, the whole finished line was painted on
+   screen: the flash of text before the animation. It is held back until the
+   split adds .words-in.
+
+   The html.js-words gate is set by an inline script in the layout, so with
+   scripting off nothing here applies and the headline just shows. That script
+   also clears the gate after two seconds, in case the split ever throws. */
+html.js-words [data-words]{ visibility:hidden; }
+html.js-words [data-words].words-in{ visibility:visible; }

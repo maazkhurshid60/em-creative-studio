@@ -43,6 +43,9 @@ if (hl) {
   [...hl.querySelectorAll('.w > i')].forEach((i,n) => {
     i.style.animationDelay = (320 + n*52) + 'ms';
   });
+  /* the line is held back by html.js-words until this point, so that the
+     unsplit text is never painted - see the stylesheet */
+  hl.classList.add('words-in');
 }
 
 /* nav scroll shadow */

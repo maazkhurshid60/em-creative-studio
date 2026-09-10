@@ -129,10 +129,10 @@ export const SITE_BODY_HTML = `
         <img
           class="shot__img"
           src="/images/hero-shot.webp"
-          srcset="/images/hero-shot-sm.webp 1200w, /images/hero-shot.webp 2400w"
+          srcset="/images/hero-shot-sm.webp 800w, /images/hero-shot.webp 1360w"
           sizes="100vw"
-          width="2400" height="1357"
-          alt="A sunlit modern living room, warm plaster and oak, someone walking through"
+          width="1360" height="907"
+          alt="A boardroom with a long walnut table, black chairs and a wall-mounted screen"
           decoding="async">
         <!-- second fluid field, over the photograph rather than the paper.
              Sits before the veil so the veil still darkens everything under

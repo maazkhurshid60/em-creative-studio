@@ -14,6 +14,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
       <head>
+        {/* Set during parse, before the body paints, so the headline can be
+            held back until its word-split has run - see the html.js-words rule
+            in the stylesheets. Gating on a class the script itself adds means a
+            browser with no JS never hides anything, and the timeout is the
+            backstop if a page's split throws before it adds .words-in. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "document.documentElement.classList.add('js-words');" +
+              "setTimeout(function(){document.documentElement.classList.remove('js-words')},2000);",
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link

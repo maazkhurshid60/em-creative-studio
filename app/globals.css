@@ -865,15 +865,24 @@ body.hero-revealed .shot__frame{
   color:var(--paper);
   text-shadow:0 2px 30px rgba(30,21,9,.5);
 }
-/* The line lights up a word at a time as the plate opens. Each word's ramp is
-   its own index pushed along the progress track, so the wipe reads left to
-   right; the floor is a dim state rather than nothing, which is what makes it
-   look like the sentence is being lit rather than typed in.
+/* The line arrives a word at a time as the plate opens. Each word's ramp is its
+   own index pushed along the progress track, so the wipe reads left to right.
 
-   --i is the word's position, set inline in the markup. The whole thing is a
-   function of --sp, so scrubbing the scroll backwards unlights it again. */
+   The floor used to be .26 rather than 0, which left the whole sentence sitting
+   on the photograph in grey before any of it was meant to be read - the reveal
+   had nothing to reveal. Each word now starts at nothing and out of focus, and
+   comes up through the blur as its ramp passes: it reads as words resolving,
+   not as a caption being dimmed up.
+
+   One ramp drives all three properties, so they cannot drift apart. --i is the
+   word's position, set inline in the markup, and the whole thing is a function
+   of --sp, so scrubbing the scroll backwards puts it away again. */
 .shot__lede .w{
-  opacity:clamp(.26, calc((var(--sp) - .2 - var(--i) * .027) * 10), 1);
+  --w:clamp(0, calc((var(--sp) - .2 - var(--i) * .027) * 10), 1);
+  display:inline-block;
+  opacity:var(--w);
+  filter:blur(calc((1 - var(--w)) * 11px));
+  transform:translateY(calc((1 - var(--w)) * .16em));
 }
 .shot__lede strong{ color:var(--paper); font-weight:500; }
 /* Held back until the plate is most of the way open, then lifted in. The
@@ -912,7 +921,9 @@ body.hero-revealed .shot__frame{
     clip-path:none !important;
     opacity:1 !important; transform:none !important; animation:none !important;
   }
-  .shot__lede .w{ opacity:1 !important; }
+  .shot__lede .w{
+    opacity:1 !important; filter:none !important; transform:none !important;
+  }
   .shot__acts{ opacity:1 !important; transform:none !important; }
 }
 
@@ -1357,7 +1368,12 @@ body.hero-revealed .shot__frame{
   border:none; cursor:pointer; padding:0;
   transition:opacity 260ms ease, transform 260ms ease, background 260ms ease;
 }
-.quote__dot.active{ opacity:.6; transform:scale(1.3); background:var(--cta); }
+/* background-COLOR, not the background shorthand: the dot carries 18px of
+   transparent padding to make a 44px tap target, and paints only its 8px
+   content box via background-clip. The shorthand resets background-clip to
+   border-box, so the selected dot was filling the whole padded box - a
+   44px blob among 8px dots. */
+.quote__dot.active{ opacity:.6; transform:scale(1.3); background-color:var(--cta); }
 .quote__dot:hover{ opacity:.4; }
 
 /* ==================================================================
@@ -1785,3 +1801,15 @@ body.hero-revealed .shot__frame{
   .quote__bubble:nth-child(n+5){ display:none; }
   .quote__bubble{ transform:scale(.72); }
 }
+
+/* The headline ships as plain text - it has to, so it is there for a crawler
+   and for a browser with no JS. The script then splits it into words to
+   animate them, and until it has, the whole finished line was painted on
+   screen: the flash of text before the animation. It is held back until the
+   split adds .words-in.
+
+   The html.js-words gate is set by an inline script in the layout, so with
+   scripting off nothing here applies and the headline just shows. That script
+   also clears the gate after two seconds, in case the split ever throws. */
+html.js-words [data-words]{ visibility:hidden; }
+html.js-words [data-words].words-in{ visibility:visible; }
