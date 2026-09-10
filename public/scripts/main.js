@@ -407,24 +407,14 @@ function onScroll(){
   document.body.classList.toggle('nav-tucked', tucked);
   if (!tucked) document.body.classList.remove('nav-open');
 
-  /* ---- crown scroll-grow: crowns bloom bigger as the hero scrolls away ---- */
-  if (hero && !RM) {
-    const hRect = hero.getBoundingClientRect();
-    const heroH = hRect.height;
-    /* p: 0 at top, 1 when hero bottom reaches viewport top */
-    const p = Math.max(0, Math.min(1, -hRect.top / (heroH * 0.72)));
-    /* easeInQuad for an accelerating feel — subtle at first, dramatic at exit */
-    const ep = p * p;
-    const maxGrow = innerWidth < 600 ? 0.5 : 0.9;  /* gentler on mobile */
-    const s  = 1 + ep * maxGrow;
-    const br = 1 + ep * 0.12;             /* brightness bloom 1 → 1.12 */
-    const op = Math.max(0, 1 - ep * 1.1); /* fade out as they grow */
-    liquids.forEach(el => {
-      el.style.setProperty('--scroll-s', s.toFixed(4));
-      el.style.setProperty('--scroll-br', br.toFixed(3));
-      el.style.opacity = op.toFixed(3);
-    });
-  }
+  /* The crown used to bloom bigger and fade as the hero scrolled away, by
+     scaling .liquid on every scroll frame. That worked while the mark was a
+     decorative form parked in the corner by the stylesheet. It is now part of
+     the headline lockup, and crown.js places it there with a large translate
+     on .liquid__stage — which sits INSIDE .liquid, so scaling the parent
+     multiplied that translate and swung the mark down and across the hero as
+     you scrolled. It belongs to the headline now: it scrolls with it, and
+     nothing here moves it. */
 
   if (!RM) {
     steps.forEach((s,i) => {
